@@ -1,5 +1,5 @@
 with open('input.txt', 'r') as file:
-	input_data = file.read().split('\n')[:-1]
+	input_data = list(map(list, file.read().split('\n')[:-1]))
 
 test_input = """7-F7-
 .FJ|7
@@ -8,12 +8,12 @@ SJLL7
 LJ.LJ""".split('\n')
 
 connection_map = {
-	'|': [(-1, 0), (1, 0)],
-	'-': [(0, -1), (0, 1)],
-	'L': [(-1, 0), (0, 1)],
-	'J': [(-1, 0), (0, -1)],
-	'7': [(1, 0), (0, -1)],
-	'F': [(1, 0), (0, 1)],
+	'|': [(-1, 0), (1, 0)], # north south
+	'-': [(0, -1), (0, 1)], # east west
+	'L': [(-1, 0), (0, 1)], # north east
+	'J': [(-1, 0), (0, -1)], # north west
+	'7': [(1, 0), (0, -1)], # # west south
+	'F': [(1, 0), (0, 1)], # east south
 	'S': [ (-1, 0), (0, -1), (0, 1), (1, 0)]
 }
 
@@ -95,48 +95,59 @@ for path in paths:
 	if walk:
 		print((len(walk) - 1) / 2)
 print(len(final_walk))
+print(s_loc, final_walk[1], final_walk[-2])
 final_walk.sort()
 
 walk_details = {row: list(map(lambda x: x[1], filter(lambda x: x[0] == row, final_walk))) for row in set(map(lambda x: x[0], final_walk))}
 
-import itertools
 
-def ranges(i):
-    for a, b in itertools.groupby(enumerate(i), lambda pair: pair[1] - pair[0]):
-        b = list(b)
-        yield b[0][1], b[-1][1]
+"""alfonsusac
 
-
-print(list(ranges([1, 2, 3, 4, 59, 71,72])))
-
-
-
-
-
-def get_enclosed_in_row(length, loopcells):
-	if not loopcells:
-		return 0
+Basically the pseudocode is:
+for each row, let isInside = false.
+for each char in row,
+if its a ┌ or └, remember this curve.
+if its a ┐ and previous curve is ┌ (forming ┌┐), then forget previous curve
+if its a ┘ and previous curve is └ (forming └┘), then forget previous curve
+if its a ┐and previous curve is └ (forming └┐), then its a barrier and flip isInside flag
+if its a ┘and previous curve is ┌ (forming ┌┘), then its a barrier and flip isInside flag
+then if its a pipe that doesn't have a distance (not part of the loop) and the isInside flag is true, you can just count it as insideSpace"""
+def get_enclosed_in_row(row, inp, loop_cells, length):
 	enclosed = False
-	total_enclosed = 0
+	previous_curve = None
+	enclosed_cells = 0
 	for i in range(length):
-		if i in loopcells:
-			if i+1 in loopcells:
-				continue
-			if i-1 not in loopcells:
-				enclosed = not enclosed
-
+		if i not in loop_cells:
+			if enclosed:
+				enclosed_cells += 1
+			continue
+		if inp[row][i] in ('FL'):
+			previous_curve = inp[row][i]
 			continue
 
-		if enclosed:
-			print(f'{i} is enclosed')
-			total_enclosed += 1
+		if inp[row][i] == '7' and previous_curve == 'F':
+			previous_curve = None
+			continue
 
-	return total_enclosed
+		if inp[row][i] == 'J' and previous_curve == 'L':
+			previous_curve = None
+			continue
 
-print(get_enclosed_in_row(5, [0, 1,3,  4]))
+		if inp[row][i] == '7' and previous_curve == 'L':
+			enclosed = not enclosed
+			continue
 
+		if inp[row][i] == 'J' and previous_curve == 'F':
+			enclosed = not enclosed
+			continue
+	return enclosed_cells
+
+
+input_data[s_loc[0]][s_loc[1]] = 'F'
+	
+# S is an F
 
 total = 0
 for row, items in walk_details.items():
-	total += get_enclosed_in_row(len(input_data[row]), items)
+	total += get_enclosed_in_row(row, input_data, items, len(input_data[row]))
 print(total)
