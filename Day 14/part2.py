@@ -75,7 +75,7 @@ with open('input.txt', 'r') as file:
 loads = [-1, -1]
 counter = 0
 plat = parse_input(input_data)
-while counter < 1000000000:
+while counter < 1_000_000_000:
 	if counter % 10_000 == 0:
 		print(counter)
 	counter += 1
